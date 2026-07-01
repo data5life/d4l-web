@@ -1,0 +1,105 @@
+volumes:
+  test_db_data:
+
+services:
+  migrate:
+    image: d4l-migrate-db:test
+    build:
+      context: .
+      target: migrate
+      secrets:
+        - npm_token
+    environment:
+      - DATABASE_URL=file:/app/data/test.db
+    volumes:
+      - test_db_data:/app/data
+    restart: no
+    command: ['npx', 'prisma', 'migrate', 'reset', '--force']
+
+  mock-server:
+    image: node:22-bookworm-slim
+    working_dir: /app
+    volumes:
+      - ./mocks/server:/app
+    command: ['node', 'index.mjs']
+    expose:
+      - '3001'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3001/health').then(() => process.exit(0)).catch(() => process.exit(1))",
+        ]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+      start_period: 3s
+
+  web:
+    image: d4l-webapp:test
+    build:
+      context: .
+      target: prod
+      secrets:
+        - npm_token
+      args:
+        - SENSORHUB_URL=http://mock-server:3001/sensorhub/api
+        - MOCK_DONATION_CLIENT=true
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/test.db
+      - AUTH_TRUST_HOST=true
+      - AUTH_URL=http://web:3000/api/auth
+      - AUTH_SECRET=secret-for-testing
+      - SENSORHUB_URL=http://mock-server:3001/sensorhub/api
+    volumes:
+      - test_db_data:/app/data
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://web:3000/api/health').then(r => process.exit(r.ok ? 0 : 1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    expose:
+      - '3000'
+
+  playwright:
+    image: d4l-webapp:playwright
+    build:
+      context: .
+      target: playwright
+      secrets:
+        - npm_token
+    depends_on:
+      web:
+        condition: service_healthy
+    volumes:
+      - test_db_data:/app/data
+      - ./e2e:/app/e2e
+    command: ['npx', 'playwright', 'test']
+    ports:
+      - '9323:9323'
+
+  test-unit:
+    image: d4l-webapp:test-unit
+    build:
+      context: .
+      target: test-unit
+      secrets:
+        - npm_token
+    command: ['sh', '-c', 'npm run validate && npm test']
+
+secrets:
+  npm_token:
+    environment: NPM_TOKEN

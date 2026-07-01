@@ -1,0 +1,89 @@
+services:
+  web:
+    container_name: d4l-app-prod
+    image: d4l-webapp:latest
+    build:
+      context: .
+      target: prod
+      args:
+        - SENSORHUB_URL
+      secrets:
+        - npm_token
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    ports:
+      - '${APP_PORT:-3000}:3000'
+    env_file:
+      - .env.local
+    environment:
+      - AUTH_TRUST_HOST=true
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/prod.db
+    volumes:
+      - next_db_data:/app/data
+    command: ['node', 'server.js']
+
+  migrate:
+    image: d4l-migrate-db:latest
+    build:
+      context: .
+      target: migrate
+      secrets:
+        - npm_token
+    environment:
+      - DATABASE_URL=file:/app/data/prod.db
+    volumes:
+      - next_db_data:/app/data
+    restart: no
+    command: ['npx', 'prisma', 'migrate', 'deploy']
+
+  mail-worker:
+    container_name: d4l-mail-worker-prod
+    image: d4l-mail-worker:latest
+    build:
+      context: .
+      target: scripts
+      secrets:
+        - npm_token
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    env_file:
+      - .env.local
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/prod.db
+    volumes:
+      - next_db_data:/app/data
+    command: ['npx', 'tsx', '--tsconfig', 'tsconfig.scripts.json', 'scripts/mail-worker.ts']
+
+  scheduler:
+    container_name: d4l-scheduler-prod
+    image: d4l-scheduler:latest
+    build:
+      context: .
+      target: scripts
+      secrets:
+        - npm_token
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    env_file:
+      - .env.local
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/prod.db
+    volumes:
+      - next_db_data:/app/data
+    command: ['npx', 'tsx', '--tsconfig', 'tsconfig.scripts.json', 'scripts/scheduler.ts']
+
+volumes:
+  next_db_data:
+
+secrets:
+  npm_token:
+    environment: NPM_TOKEN

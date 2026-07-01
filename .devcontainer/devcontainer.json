@@ -1,0 +1,21 @@
+{
+  "name": "D4L Project",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "web",
+  "workspaceFolder": "/app",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Prisma.prisma",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss"
+      ]
+    }
+  },
+
+  "postCreateCommand": "npx husky install && npx prisma db push",
+
+  "remoteUser": "root"
+}

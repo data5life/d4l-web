@@ -1,0 +1,7 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "tags": ["-lintignore"],
+  "ignoreDependencies": ["@testing-library/react", "@testing-library/user-event", "msw"],
+  "entry": ["mocks/server/index.mjs"],
+  "ignore": ["/components/ui/**"]
+}

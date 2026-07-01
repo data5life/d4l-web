@@ -71,6 +71,16 @@ USER node
 EXPOSE 3000
 CMD ["node", "server.js"]
 
+# --- STAGE: SCRIPTS ----
+FROM node:22-bookworm-slim AS scripts
+WORKDIR /app
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/prisma ./prisma
+COPY . .
+ENV NODE_ENV=production
+USER node
+
 # --- STAGE: PLAYWRIGHT ---
 FROM node:22-bookworm-slim AS playwright
 WORKDIR /app

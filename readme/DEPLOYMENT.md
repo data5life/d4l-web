@@ -23,6 +23,7 @@ This will:
 - run database migrations
 - build and start the production Next.js application
 - persist data using the `next_db_data` volume
+- run the `scheduler` and the `mail-worker`
 
 ---
 
@@ -46,6 +47,7 @@ EMAIL_SERVER_PASSWORD=your-resend-api-key
 EMAIL_FROM=your-verified-email@your-domain.com
 
 NEXT_PUBLIC_D4L_DISPATCHER_SECRET=the-d4l-dispatcher-secret
+SENSORHUB_URL=the-sensorhub-base-url
 
 # Google OAuth (optional)
 AUTH_GOOGLE_ID=your-google-client-id
@@ -54,28 +56,23 @@ AUTH_GOOGLE_SECRET=your-google-client-secret
 INTERNAL_EMAIL_SECRET=your-shared-email-secret
 ```
 
+Additionally create a `.env` with the following contents:
+
+```env
+NPM_TOKEN=the-d4l-token
+SENSORHUB_URL=the-sensorhub-base-url
+```
+
 For more informations on how to setup the enviroment variables check out
 [DEVELOPMENT.md](./DEVELOPMENT.md#2-create-environment-variables)
 
 ---
 
-## 3. Configure NPM Auth Token
-
-Also add the npm auth token for d4l to install the `@d4l/collect-lib` by running:
-
-```bash
-echo '//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}' >> .npmrc
-```
-
-Either export the token via a shell enviroment variable or substitute `${NPM_AUTH_TOKEN}` with the token.
-
----
-
-## 4. Port Configuration
+## 3. Port Configuration
 
 Default port: `3000`
 
-Override via environment variable:
+Override via environment variable in the `.env`:
 
 ```env
 APP_PORT=8080
@@ -89,7 +86,7 @@ APP_PORT=8080 docker compose -f docker-compose_prod.yml up -d
 
 ---
 
-## 5. Lifecycle Management
+## 4. Lifecycle Management
 
 ```bash
 # View logs
@@ -107,7 +104,7 @@ docker compose -f docker-compose_prod.yml up -d
 
 ---
 
-## 6. Database Backups
+## 5. Database Backups
 
 The database is stored in the Docker volume `next_db_data`.
 

@@ -68,7 +68,6 @@ EMAIL_FROM=onboarding@resend.dev
 NEXT_PUBLIC_D4L_DISPATCHER_SECRET=the-d4l-dispatcher-secret
 SENSORHUB_URL=the-sensorhub-base-url
 
-
 # Google OAuth — see Google Setup below
 AUTH_GOOGLE_ID=your-google-client-id
 AUTH_GOOGLE_SECRET=your-google-client-secret
